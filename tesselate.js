@@ -1,23 +1,24 @@
+var canvas;
+var ctx;
+
 function init() {
-	var canvas = document.getElementById("tesselate");
-	var ctx = canvas.getContext("2d");
+	canvas = document.getElementById("tesselate");
+	ctx = canvas.getContext("2d");
 
 	ctx.fillStyle = "#FFFFFF";
 
 	var points = [];
-	for (var i = 0; i < 100; ++i) {
-		points.push({
-			x: Math.floor(Math.random()*canvas.width),
-			y: Math.floor(Math.random()*canvas.height),
-			toString: function() { return this.x+' '+this.y}
-		});
+	for (var i = 0; i < 1000; ++i) {
+		points.push(new Point(Math.floor(
+			Math.random()*canvas.width),
+			Math.floor(Math.random()*canvas.height)
+		));
 	}
 	for (var i = 0; i < 100; ++i) {
 		ctx.rect(points[i].x,points[i].y, 1, 1);
 		ctx.fill();
 	} 
 	tesselate(points);
-	console.log(points);
 }
 
 function inTriangle(point, triangle) {
@@ -56,48 +57,43 @@ function tesselate(points) {
 	points.sort(function (p1,p2) {
 		return (p1.x > p2.x) || (p1.x === p2.x && p1.y > p2.y);
 	});
-	edges = []
-	//delaunay(points, edges);
-}
+	edges = [];
+	invEdges = []
+	for (var i = 0; i < points.length;++i) {
+			points[i].id=i;
+			edges.push([]);
+			invEdges.push([]);
+	}
+	
 
-function delaunay(points,edges) {
-	alert(points);
-	if (points.length == 3) {
-		var line1 = [points[0],points[1]];
-		var line2 = [points[1],points[2]];
-		var line3 = [points[2],points[0]];
-		if (ccw(points[0], points[1], points[2])) { 
-			edges.push(line1,line2,line3);
-			return [line1.splice(), line2.reverse()];
-		} else if (ccw(points[0], points[2], points[1])) {
-			line3.reverse()
-			edges.push(line1,line2,line3);
-			return [line3.slice().reverse(), line3.slice()];
-		} else {
-			edges.push(line1,line2);
-			return [line1.splice(), line2.reverse()];
-		}
-	} else if (points.length == 2) {
-		var line = [points[0],points[1]];
-		edges.push(line);
-		return [line.slice(), line.reverse()];
-	} else {
-		var half = Math.floor(points.length/2);
-		return delaunayMerge(delaunay(points.slice(0,half)),
-							 delaunay(points.slice(half, points.length)),
-							 edges);
+	triangles = delaunay(points, edges, invEdges);
+
+	for (var i = 0; i < triangles.length; ++i) {
+		ctx.beginPath();
+		ctx.moveTo(triangles[i][0].x, triangles[i][0].y);
+		ctx.lineTo(triangles[i][1].x, triangles[i][1].y);
+		ctx.lineTo(triangles[i][2].x, triangles[i][2].y);
+		ctx.lineTo(triangles[i][0].x, triangles[i][0].y);
+		ctx.strokeStyle = "#FFFFFF";
+		ctx.stroke();
 	}
 }
 
-function delaunayMerge(delRes1, delRes2, edges) {
-	var ldo = delRes1[0];
-	var ldi = delRes1[1];
-	var rdi = delRes2[0];
-	var rdo = delRes2[0];
-	if 
-};
+function Point(x,y) {
+	this.x = x;
+	this.y = y;
+}
+Point.prototype.toString = function () {
+	return this.x+" "+this.y;
+}
 
 
+function addEdge(line, edges, invEdges) {
+	id1 = line[0].id;
+	id2 = line[1].id;
+	edges[id1].push(id2);
+	invEdges[id2].push(id1);
+}
 
 function linesIntersect(line1, line2) {
 	v1 = pDiff(line1[1], line1[0]);
