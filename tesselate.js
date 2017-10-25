@@ -14,9 +14,7 @@ function init() {
 	image.onload = function() {
 		points = genPoints(4000, image)
 		triangles = tesselate(points);
-		tesselateImage(image, triangles);
-		//improveImage(image, triangles, 5);
-		//tesselateImage(image, triangles);
+		setTimeout(function() {tesselateImage(image, triangles);});
 	};
 }
 
@@ -78,7 +76,7 @@ function tesselateImage(image, triangles) {
 	}
 }
 
-function avgColor(imageData, imageSize, triangle) {
+function fullAvgColor(imageData, imageSize, triangle) {
 
 	box = new BoundingBox(triangle);
 	var c = 0;
@@ -99,3 +97,47 @@ function avgColor(imageData, imageSize, triangle) {
 		b: Math.floor(b/c),
 	}
 }
+
+function monteCarloAvgColor(imageData, imageSize, triangle, samples) {
+	if (samples === undefined) {
+		samples = 200;
+	}
+	var edge1 = pDiff(triangle[1],triangle[0]);
+	var edge2 = pDiff(triangle[2],triangle[0]);
+	var r = 0, g = 0, b = 0;
+
+	for (var i = 0; i < samples; ++i) {
+		var r1 = Math.random();
+		var r2 = Math.random();
+		if (r1 + r2 > 1) {
+			r1 = 1 - r1;
+			r2 = 1 - r2;
+		}
+		var samplePoint = pSum(
+				triangle[0],
+				pSum(
+					scale(edge1, r1),
+					scale(edge2, r2)
+				)
+			);
+		x = ~~(samplePoint.x);
+		y = ~~(samplePoint.y);
+
+		r += imageData[4*(imageSize.w*y+x)];
+		g += imageData[4*(imageSize.w*y+x)+1];
+		b += imageData[4*(imageSize.w*y+x)+2];
+
+	}
+
+	return {
+		r: Math.floor(r/samples),
+		g: Math.floor(g/samples),
+		b: Math.floor(b/samples),
+	}
+}
+//// Alternatives:
+//	fullAvgColor - slow method, O(w*h), where w*h
+//		is size of triangle's bounding box
+//
+//	monteCarloAvgColor - fast approximation, O(1)
+var avgColor = monteCarloAvgColor;
