@@ -1,43 +1,32 @@
 var canvas;
 var ctx;
+var image;
+var points, triangles;
 
 function init() {
 	canvas = document.getElementById("tesselate");
 	ctx = canvas.getContext("2d");
 
 	ctx.fillStyle = "#FFFFFF";
-
-	var points = [];
-	for (var i = 0; i < 1000; ++i) {
-		points.push(new Point(Math.floor(
-			Math.random()*canvas.width),
-			Math.floor(Math.random()*canvas.height)
-		));
-	}
-	for (var i = 0; i < 100; ++i) {
-		ctx.rect(points[i].x,points[i].y, 1, 1);
-		ctx.fill();
-	}
-	triangles = tesselate(points);
 	image = new Image();
 	image.src = "stary_night.jpg";
-	image.onload = function() {tesselateImage(image, triangles)};
+	//improveImage(1,1,triangles);
+	image.onload = function() {
+		points = genPoints(4000, image)
+		triangles = tesselate(points);
+		tesselateImage(image, triangles);
+		//improveImage(image, triangles, 5);
+		//tesselateImage(image, triangles);
+	};
 }
 
 function tesselate(points) {
 	points.sort(function (p1,p2) {
 		return (p1.x > p2.x) || (p1.x === p2.x && p1.y > p2.y);
 	});
-	edges = [];
-	invEdges = []
-	for (var i = 0; i < points.length;++i) {
-			points[i].id=i;
-			edges.push([]);
-			invEdges.push([]);
-	}
 	
 
-	triangles = delaunay(points, edges, invEdges);
+	triangles = delaunay(points);
 
 	for (var i = 0; i < triangles.length; ++i) {
 		ctx.beginPath();
@@ -61,17 +50,31 @@ function tesselateImage(image, triangles) {
 	imageData = imageCtx.getImageData(0, 0, image.width, image.height).data;
 
 	for (var i = 0; i < triangles.length; ++i) {
-		c = avgColor(imageData, imageSize, triangles[i]);
-		ctx.beginPath();
-		ctx.moveTo(triangles[i][0].x, triangles[i][0].y);
-		ctx.lineTo(triangles[i][1].x, triangles[i][1].y);
-		ctx.lineTo(triangles[i][2].x, triangles[i][2].y);
-		ctx.lineTo(triangles[i][0].x, triangles[i][0].y);
-		ctx.strokeStyle = "rgb(0,0,0)";
-		ctx.stroke();
+		var c = avgColor(imageData, imageSize, triangles[i]);
+		var triangle = bitBigger(triangles[i]);
+		ctx.beginPath(); 
+		ctx.moveTo(triangle[0].x, triangle[0].y);
+		ctx.lineTo(triangle[1].x, triangle[1].y);
+		ctx.lineTo(triangle[2].x, triangle[2].y);
+		ctx.lineTo(triangle[0].x, triangle[0].y);
+		//ctx.strokeStyle = "rgb(0,0,0)";
+		//ctx.stroke();
 		ctx.fillStyle = "rgb("+c.r+","+c.g+","+c.b+")";
 		ctx.fill();
+	}
 
+	for (var i = 0; i < triangles.length; ++i) {
+		var c = avgColor(imageData, imageSize, triangles[i]);
+		var triangle = triangles[i];
+		ctx.beginPath(); 
+		ctx.moveTo(triangle[0].x, triangle[0].y);
+		ctx.lineTo(triangle[1].x, triangle[1].y);
+		ctx.lineTo(triangle[2].x, triangle[2].y);
+		ctx.lineTo(triangle[0].x, triangle[0].y);
+		//ctx.strokeStyle = "rgb(0,0,0)";
+		//ctx.stroke();
+		ctx.fillStyle = "rgb("+c.r+","+c.g+","+c.b+")";
+		ctx.fill();
 	}
 }
 

@@ -3,6 +3,7 @@
 function Point(x,y) {
 	this.x = x;
 	this.y = y;
+	return this;
 }
 Point.prototype.toString = function () {
 	return this.x+" "+this.y;
@@ -44,12 +45,21 @@ function linesIntersect(line1, line2) {
 	return (u <= 1 && u >= 0);
 }
 
-function pDiff(p1, p2) {
-	return {
-		x: p1.x - p2.x,
-		y: p1.y - p2.y,
-	};
+function len(p) {
+	return Math.sqrt(p.x*p.x+p.y*p.y);
 }
+
+function pDiff(p1, p2) {
+	return new Point(p1.x - p2.x, p1.y - p2.y);
+}
+function pSum(p1, p2) {
+	return new Point(p1.x + p2.x, p1.y + p2.y);
+}
+
+function scale(p, c) {
+	return new Point(c*p.x, c*p.y);
+}
+
 function cross(v1, v2) {
 	return v1.x*v2.y - v2.x*v1.y;
 }
@@ -83,4 +93,25 @@ function BoundingBox(triangle) {
 	this.rightX = Math.max(triangle[0].x,Math.max(triangle[1].x,triangle[2].x));
 	this.rightY = Math.max(triangle[0].y,Math.max(triangle[1].y,triangle[2].y));
 	return this;
+}
+
+function centerOfMass(triangle) {
+	var x = 0, y = 0;
+	for (var i = 0; i < 3; ++i) {
+		x += triangle[i].x;
+		y += triangle[i].y;
+	}
+	return new Point(x/3, y/3);
+}
+
+function bitBigger(triangle) {
+	delta = 2;
+	var cm = centerOfMass(triangle);
+	var v = [,,,];
+	for (var i = 0; i < 3; ++i) {
+		v[i] = (pDiff(triangle[i],cm));
+		v[i] = scale(v[i], 1.0+delta/len(v[i]));
+		v[i] = pSum(v[i],cm);
+	}
+	return v;
 }
